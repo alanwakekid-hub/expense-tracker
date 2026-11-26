@@ -304,6 +304,25 @@ function resizeImage(file, size = 128) {
     img.src = url;
   });
 }
+// ล้างข้อมูลในเครื่องและรีเซ็ตหน้าจอให้เป็นค่าเริ่มต้น (ใช้ตอนออกจากระบบ)
+function resetToDefault() {
+  items = [];
+  goals = {};
+  customCats = [];
+  profile = {};
+  drafts = [];
+  editing = false;
+  work = null;
+  syncNotice = "";
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(KEY + "-goals");
+  localStorage.removeItem(KEY + "-cats");
+  $("monthPick").value = todayStr().slice(0, 7);
+  $("exportMonth").value = $("monthPick").value;
+  $("date").value = todayStr();
+  $("filterCat").value = "";
+  if (typeof renderDrafts === "function") renderDrafts();
+}
 function afterPhotoChange() {
   renderAvatar();
   pushCloud();
@@ -998,12 +1017,15 @@ function initCloud() {
     $("logoutBtn").classList.toggle("hidden", !user);
     renderAvatar();
     if (!user) {
+      // ออกจากระบบหลังจากเคยล็อคอิน: กลับสู่ค่าเริ่มต้น (ข้อมูลยังอยู่บนคลาวด์)
+      if (CLOUD.wasIn) resetToDefault();
       profile = {};
       renderAvatar();
       setAuthMsg("ยังไม่ได้เข้าสู่ระบบ ข้อมูลเก็บในเบราว์เซอร์นี้");
       renderAll();
       return;
     }
+    CLOUD.wasIn = true;
     setAuthMsg("เข้าสู่ระบบแล้ว: " + (user.email || user.displayName || ""));
     try {
       const ref = CLOUD.db.collection("users").doc(user.uid);
