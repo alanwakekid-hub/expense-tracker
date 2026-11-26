@@ -1,8 +1,4 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>บันทึกรายรับรายจ่าย</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -63,16 +59,106 @@
   .hidden { display:none !important; }
 .avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; display:inline-flex; align-items:center; justify-content:center; background:#4b5563; color:#fff; font-weight:600; flex-shrink:0; }
 .link-btn { background:none; border:none; padding:2px 4px; font-size:12px; color:#888; text-decoration:underline; cursor:pointer; margin-left:auto; }
-</style>
-</head>
-<body>
-<header>
-  <h1>💰 บันทึกรายรับรายจ่าย</h1>
-  <input type="month" id="monthPick">
-</header>
-<main>
 
-<div class="card">
+/* ---------- ธีมแบบ iOS ---------- */
+:root {
+  --bg: #f2f2f7; --card: rgba(255,255,255,.78); --text: #1c1c1e; --muted: #8e8e93;
+  --blue: #007aff; --green: #34c759; --red: #ff3b30; --line: rgba(60,60,67,.14);
+  --fill: rgba(120,120,128,.12); --shadow: 0 8px 30px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1724; --card: rgba(30,41,59,.78); --text: #e2e8f0; --muted: #94a3b8;
+    --blue: #60a5fa; --green: #34d399; --red: #f87171; --line: rgba(148,163,184,.22);
+    --fill: rgba(148,163,184,.14); --shadow: 0 8px 30px rgba(2,6,23,.45);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1724; --card: rgba(30,41,59,.78); --text: #e2e8f0; --muted: #94a3b8;
+  --blue: #60a5fa; --green: #34d399; --red: #f87171; --line: rgba(148,163,184,.22);
+  --fill: rgba(148,163,184,.14); --shadow: 0 8px 30px rgba(2,6,23,.45);
+}
+body {
+  font-family: -apple-system, system-ui, "Sarabun", "Noto Sans Thai", sans-serif;
+  -webkit-font-smoothing: antialiased; background: var(--bg); color: var(--text);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+header {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  color: var(--text); border-bottom: .5px solid var(--line); padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+}
+header h1 { font-size: 17px; font-weight: 600; }
+header input { background: var(--fill); color: var(--text); border-radius: 10px; }
+main { padding: 16px; max-width: 640px; }
+.card {
+  background: var(--card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  border: .5px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: none; letter-spacing: .1px; margin: 0 0 12px; }
+label { font-size: 13px; color: var(--muted); margin: 10px 0 6px; font-weight: 500; }
+input, select {
+  background: var(--fill); color: var(--text); border: 0; border-radius: 12px;
+  padding: 12px; font-size: 16px; -webkit-appearance: none; appearance: none; outline: none;
+}
+input:focus, select:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 35%, transparent); }
+input.small { width: 110px; }
+button {
+  background: var(--blue); color: #fff; border-radius: 14px; padding: 14px; font-size: 16px;
+  font-weight: 600; margin-top: 10px; transition: transform .15s ease, opacity .15s ease;
+}
+button:active { transform: scale(.97); opacity: .85; }
+button.secondary { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
+button.del { color: var(--red); background: none; font-weight: 500; padding: 6px 8px; font-size: 14px; }
+button.mini { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); padding: 8px 12px; font-size: 14px; border-radius: 10px; }
+.muted { color: var(--muted); font-size: 13px; }
+.inc { color: var(--green); font-weight: 600; } .exp { color: var(--red); font-weight: 600; }
+.bar { height: 6px; background: var(--fill); border-radius: 99px; margin-top: 8px; }
+.bar > div { background: var(--blue); border-radius: 99px; }
+.bar > div.over { background: var(--red); }
+.stats { gap: 10px; }
+.stats > div { background: var(--fill); border-radius: 16px; padding: 12px; }
+.stats small { color: var(--muted); font-size: 12px; }
+.stats b { font-size: 18px; font-weight: 700; }
+.left { font-size: 34px; font-weight: 700; letter-spacing: -.5px; margin: 16px 0 4px; }
+.cat { padding: 12px 0; border-bottom: .5px solid var(--line); }
+.cat-head { font-size: 15px; font-weight: 600; }
+.catbox { border: .5px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 12px; background: var(--fill); }
+.subline { font-size: 14px; padding: 6px 0 0 6px; }
+.subline .amt { color: var(--muted); font-variant-numeric: tabular-nums; }
+.upload { border: 1.5px dashed color-mix(in srgb, var(--blue) 55%, transparent); border-radius: 18px; background: color-mix(in srgb, var(--blue) 6%, transparent); color: var(--blue); padding: 20px; font-weight: 500; }
+.draft { border: .5px solid var(--line); border-radius: 16px; padding: 12px; margin-bottom: 12px; background: var(--card); }
+.draft img { border-radius: 12px; }
+.draft-status.ok { color: var(--green); } .draft-status.fail { color: var(--red); }
+.item { padding: 12px 0; border-bottom: .5px solid var(--line); }
+.item small { color: var(--muted); }
+.tag { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); font-weight: 500; padding: 3px 9px; }
+.avatar { width: 44px; height: 44px; background: var(--fill); color: var(--text); box-shadow: 0 0 0 2px var(--card); }
+#userName { font-size: 15px; font-weight: 600; }
+.link-btn { color: var(--blue); text-decoration: none; font-size: 13px; font-weight: 500; padding: 4px 6px; }
+.catbox button.del, .item button.del { font-size: 14px; }
+.menu-btn { margin: 0 0 0 auto; width: 36px; height: 36px; border-radius: 50%; background: var(--fill); border: 0; padding: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; cursor: pointer; }
+.menu-btn span { width: 16px; height: 2px; background: var(--text); border-radius: 2px; }
+.menu-panel { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: .5px solid var(--line); }
+.menu-panel button { margin-top: 0; }
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+  /* สีเพิ่มเติม */
+  header { background: linear-gradient(135deg, #2563eb, #7c3aed); }
+  .stats > div:nth-child(1) { background: color-mix(in srgb, var(--green) 14%, transparent); }
+  .stats > div:nth-child(2) { background: color-mix(in srgb, var(--red) 14%, transparent); }
+  .stats > div:nth-child(1) b { color: var(--green); }
+  .stats > div:nth-child(2) b { color: var(--red); }
+  .bar > div { background: linear-gradient(90deg, #16a34a, #22c55e); }
+  .bar > div.over { background: linear-gradient(90deg, #f97316, #dc2626); }
+  .tag { background: color-mix(in srgb, #7c3aed 16%, transparent); color: #8b5cf6; }
+  .upload { background: color-mix(in srgb, #7c3aed 9%, transparent); border-color: #a78bfa; color: #8b5cf6; }
+  button.secondary { background: color-mix(in srgb, #6366f1 16%, transparent); color: #6366f1; }
+  .catbox { background: var(--fill); }
+</style>
+<header>
+  <h1 style="display:flex;align-items:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px;flex-shrink:0;margin-right:8px"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M16 14.5h2"/><path d="M6 6l9-3 1 3"/></svg>บันทึกรายรับรายจ่าย</h1>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <img id="avatar" class="avatar hidden" alt="รูปโปรไฟล์">
     <span id="avatarFallback" class="avatar hidden"></span>
@@ -80,7 +166,14 @@
     <button id="logoutBtn" class="secondary hidden">ออกจากระบบ</button>
     <button id="loginBtn" class="hidden">เข้าสู่ระบบด้วย Google</button>
     <small id="authMsg" class="muted">กำลังเริ่มต้น...</small>
-    <button id="photoBtn" class="link-btn hidden">แก้ไขโปรไฟล์</button>
+    <button id="menuBtn" class="menu-btn" aria-label="เมนู"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+
+  <div id="menuPanel" class="hidden menu-panel">
+    <button id="photoBtn" class="secondary hidden">แก้ไขโปรไฟล์</button>
+    <button id="themeBtn" class="secondary">โหมด: อัตโนมัติ</button>
   </div>
   <div id="photoPanel" class="hidden" style="margin-top:10px;display:grid;gap:8px">
     <label>ชื่อที่แสดง (ถ้าเว้นว่างจะใช้ชื่อจาก Google)<input type="text" id="displayNameInput" maxlength="40"></label>
@@ -91,6 +184,10 @@
     <label>หรืออัพโหลดรูปจากเครื่อง (ระบบจะย่อเป็นวงกลม)<input type="file" id="photoFile" accept="image/*"></label>
     <button id="useGoogle" class="secondary">ใช้รูปจาก Google</button>
   </div>
+
+<div class="card">
+  <h2>เดือนที่ดู</h2>
+  <input type="month" id="monthPick">
 </div>
 
   <!-- ตั้งงบเดือนนี้ -->
@@ -126,7 +223,7 @@
 
   <!-- อ่านสลิป -->
   <div class="card">
-    <h2>📷 อ่านสลิป (เลือกได้หลายรูป)</h2>
+    <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px;flex-shrink:0;"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>อ่านสลิป (เลือกได้หลายรูป)</h2>
     <label class="upload">เลือกรูปสลิปจากแกลเลอรี่ / ถ่ายรูป
       <input type="file" id="slipFiles" accept="image/*" multiple>
     </label>
@@ -137,7 +234,7 @@
 
   <!-- เพิ่มเอง -->
   <div class="card">
-    <h2>✏️ เพิ่มรายการเอง</h2>
+    <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px;margin-right:6px;flex-shrink:0;"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>เพิ่มรายการเอง</h2>
     <form id="form">
       <div class="row">
         <div>
@@ -176,6 +273,7 @@
 
 </main>
 
+<div id="toast" class="hidden" style="position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--text);color:var(--bg);padding:12px 14px;border-radius:14px;z-index:50;font-size:14px;white-space:pre-line"></div>
 <script>
 const CATEGORIES = ["อาหาร","เดินทาง","ช้อปปิ้ง","บิล/ค่าใช้จ่ายบ้าน","สุขภาพ","บันเทิง","การศึกษา","เงินเดือน/รายได้","อื่นๆ"];
 const BASE_EXP = CATEGORIES.filter(c => c !== "เงินเดือน/รายได้");
@@ -192,6 +290,12 @@ const RULES = {
 };
 
 const $ = id => document.getElementById(id);
+const IC = {
+  on: '<svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:-3px"><circle cx="12" cy="12" r="9" fill="#16a34a"/><path d="M8 12.5l2.7 2.7L16 9.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  off: '<svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:-3px"><circle cx="12" cy="12" r="8" fill="none" stroke="#9ca3af" stroke-width="1.8"/></svg>',
+  x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="vertical-align:-2px"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  warn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3l10 18H2z"/><path d="M12 10v4.5"/><path d="M12 17.5h.01"/></svg>'
+};
 const KEY = "expense-tracker-v5";
 let items = JSON.parse(localStorage.getItem(KEY) || "[]");
 let goals = JSON.parse(localStorage.getItem(KEY + "-goals") || "{}");   // { "2026-11": {income, cats:[{id,name,limit,subs:[{id,name,amount}]}]} }
@@ -201,10 +305,11 @@ let worker = null;
 let editing = false;
 let work = null; // ข้อมูลที่กำลังแก้ไขในฟอร์มตั้งงบ
 let syncNotice = ""; // ข้อความแจ้งเมื่อระบบปรับงบหัวข้อให้ตรงกับรายการย่อย
+const focusBase = new Map(); // งบหลักของหัวข้อก่อนเริ่มแก้รายการย่อย (key = id หัวข้อ)
 
 // ถ้ารายการย่อยรวมกันเกินงบของหัวข้อ ให้ปรับงบหัวข้อให้เท่ากับยอดรวมรายการย่อยอัตโนมัติ
 // ถ้าหัวข้อมีรายการย่อย งบหัวข้อจะเท่ากับผลรวมของรายการย่อยเสมอ (ทั้งเพิ่มและลด)
-function enforceSub(cat) {
+function enforceSub(cat, silent) {
   if (!cat.subs.length) return false;
   const sum = cat.subs.reduce((s, x) => s + (x.amount || 0), 0);
   const old = cat.limit || 0;
@@ -212,7 +317,8 @@ function enforceSub(cat) {
   cat.limit = sum;
   const inp = document.querySelector(`[data-f="limit"][data-cat="${cat.id}"]`);
   if (inp) inp.value = sum;
-  syncNotice = `หัวข้อ "${cat.name}" ปรับงบจาก ${fmt(old)} เป็น ${fmt(sum)} บาท ตามผลรวมของรายการย่อย`;
+  // แจ้งเตือนเฉพาะตอนที่ยอดรายการย่อยไม่ตรงกับงบหลักที่ตั้งไว้
+  if (old > 0 && !silent) syncNotice = `หัวข้อ "${cat.name}" ปรับงบจาก ${fmt(old)} เป็น ${fmt(sum)} บาท ตามผลรวมของรายการย่อย`;
   return true;
 }
 
@@ -227,6 +333,12 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "929205427802"
 };
 const CLOUD = { user: null, db: null, auth: null, timer: null };
+const okConfirm = () => true; // ในหน้า Artifact ไม่มีกล่องยืนยัน จึงทำงานต่อทันที
+function notify(m) {
+  const el = $("toast"); if (!el) return;
+  el.textContent = m; el.classList.remove("hidden");
+  clearTimeout(notify.timer); notify.timer = setTimeout(() => el.classList.add("hidden"), 3500);
+}
 let profile = {}; // { photo: ลิงก์ https หรือรูปที่อัพโหลด (data URL) }
 const cloudConfigured = () => FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith("ใส่");
 
@@ -323,6 +435,32 @@ function resetToDefault() {
   $("filterCat").value = "";
   if (typeof renderDrafts === "function") renderDrafts();
 }
+// โหมดแสดงผล: อัตโนมัติ (ตามเครื่อง) > สว่าง > มืด
+const THEME_KEY = KEY + "-theme";
+const THEME_LABEL = { auto: "อัตโนมัติ", light: "สว่าง", dark: "มืด" };
+let themeMode = "auto";
+function applyTheme(mode) {
+  if (mode === "light" || mode === "dark") document.documentElement.setAttribute("data-theme", mode);
+  else document.documentElement.removeAttribute("data-theme");
+  $("themeBtn").textContent = "โหมด: " + THEME_LABEL[mode];
+}
+try { themeMode = localStorage.getItem(THEME_KEY) || "auto"; } catch (e) { themeMode = "auto"; }
+applyTheme(themeMode);
+$("themeBtn").addEventListener("click", () => {
+  const order = ["auto", "light", "dark"];
+  themeMode = order[(order.indexOf(themeMode) + 1) % order.length];
+  try { localStorage.setItem(THEME_KEY, themeMode); } catch (e) {}
+  applyTheme(themeMode);
+});
+$("menuBtn").addEventListener("click", e => {
+  e.stopPropagation();
+  $("menuPanel").classList.toggle("hidden");
+});
+document.addEventListener("click", e => {
+  if (!$("menuPanel").contains(e.target) && e.target !== $("menuBtn")) $("menuPanel").classList.add("hidden");
+});
+$("photoBtn").addEventListener("click", () => $("menuPanel").classList.add("hidden"));
+
 function afterPhotoChange() {
   renderAvatar();
   pushCloud();
@@ -360,7 +498,7 @@ function updateBudgetCheck() {
     : `<span class="muted">ใส่เงินต้นเดือนก่อนเพื่อเช็คยอด</span>`;
   el.innerHTML = `<div class="cat"><div class="cat-head"><b>งบรวมทุกหัวข้อ</b><b>${fmt(total)} บาท</b></div>
     <div style="margin-top:4px">${status}</div>
-    ${syncNotice ? `<div class="exp" style="margin-top:6px">⚠️ ${escapeHtml(syncNotice)}</div>` : ""}</div>`;
+    ${syncNotice ? `<div class="exp" style="margin-top:6px">${IC.warn} ${escapeHtml(syncNotice)}</div>` : ""}</div>`;
 }
 
 function prevGoal(month) {
@@ -426,6 +564,7 @@ function cloneGoal(g, keepIds) {
 }
 
 function showSetup() {
+  focusBase.clear();
   const m = curMonth();
   const existing = goals[m];
   if (existing) {
@@ -456,7 +595,7 @@ function renderSetup() {
           <div class="subrow">
             <input data-f="subname" data-cat="${c.id}" data-sub="${s.id}" value="${escapeHtml(s.name)}" placeholder="ชื่อรายการ เช่น ค่าไฟ">
             <input type="number" class="small" data-f="subamt" data-cat="${c.id}" data-sub="${s.id}" value="${s.amount || ""}" placeholder="จำนวน">
-            <button class="del" data-delsub="${s.id}" data-cat="${c.id}">✕</button>
+            <button class="del" data-delsub="${s.id}" data-cat="${c.id}">${IC.x}</button>
           </div>`).join("")}
         <button class="mini" data-addsub="${c.id}">+ เพิ่มรายการย่อย</button>
       </div>`).join("")}
@@ -481,19 +620,36 @@ $("setupBody").addEventListener("input", e => {
     if (!s) return;
     if (f === "subname") s.name = e.target.value;
     else s.amount = parseFloat(e.target.value) || 0;
-    syncNotice = "";
-    enforceSub(cat);
+    enforceSub(cat, true); // ปรับงบหัวข้อเงียบ ๆ ระหว่างพิมพ์ ไปแจ้งเตือนตอนพิมพ์เสร็จ
   }
   updateBudgetCheck();
 });
 
-// เมื่อพิมพ์งบหัวข้อเสร็จ ถ้าน้อยกว่ารายการย่อยรวม ให้ปรับขึ้นอัตโนมัติ
+// จำค่างบหลักของหัวข้อไว้ก่อนเริ่มแก้รายการย่อย เพื่อใช้เทียบตอนแจ้งเตือน
+$("setupBody").addEventListener("focusin", e => {
+  const f = e.target.dataset.f;
+  if (f !== "subname" && f !== "subamt") return;
+  const cat = work && work.cats.find(c => c.id === e.target.dataset.cat);
+  if (cat && !focusBase.has(cat.id)) focusBase.set(cat.id, cat.limit || 0);
+});
+
+// เมื่อพิมพ์เสร็จ (ออกจากช่อง) จึงแจ้งเตือนถ้ายอดรายการย่อยไม่ตรงกับงบหลักเดิม
+// งบหัวข้อที่ตั้งเอง: ถ้าน้อยกว่ารายการย่อยรวม ให้ปรับขึ้นอัตโนมัติ
 $("setupBody").addEventListener("change", e => {
-  if (e.target.dataset.f !== "limit") return;
+  const f = e.target.dataset.f;
+  if (f !== "limit" && f !== "subname" && f !== "subamt") return;
   const cat = work.cats.find(c => c.id === e.target.dataset.cat);
   if (!cat) return;
   syncNotice = "";
-  enforceSub(cat);
+  if (f === "limit") {
+    enforceSub(cat);
+  } else {
+    const old = focusBase.has(cat.id) ? focusBase.get(cat.id) : (cat.limit || 0);
+    const sum = cat.subs.reduce((s, x) => s + (x.amount || 0), 0);
+    if (old > 0 && Math.abs(sum - old) >= 0.005) {
+      syncNotice = `หัวข้อ "${cat.name}" ปรับงบจาก ${fmt(old)} เป็น ${fmt(sum)} บาท ตามผลรวมของรายการย่อย`;
+    }
+  }
   updateBudgetCheck();
 });
 
@@ -508,13 +664,13 @@ $("setupBody").addEventListener("click", e => {
     if (c) c.subs = c.subs.filter(s => s.id !== t.dataset.delsub);
     renderSetup();
   } else if (t.dataset.delcat) {
-    if (!confirm("ลบหมวดนี้และรายการย่อยทั้งหมดในหมวด?")) return;
+    if (!okConfirm("ลบหมวดนี้และรายการย่อยทั้งหมดในหมวด?")) return;
     work.cats = work.cats.filter(c => c.id !== t.dataset.delcat);
     renderSetup();
   } else if (t.id === "addCat") {
     const name = $("newCatName").value.trim();
     if (!name) return;
-    if (work.cats.some(c => c.name === name)) { alert("มีหมวดนี้อยู่แล้ว"); return; }
+    if (work.cats.some(c => c.name === name)) { notify("มีหมวดนี้อยู่แล้ว"); return; }
     work.cats.push({ id: uid(), name, limit: 0, subs: [] });
     renderSetup();
   }
@@ -522,8 +678,8 @@ $("setupBody").addEventListener("click", e => {
 
 $("saveGoals").addEventListener("click", () => {
   const adjusted = [];
-  work.cats.forEach(c => { if (enforceSub(c)) adjusted.push(syncNotice); });
-  if (adjusted.length) alert(adjusted.join("\n"));
+  work.cats.forEach(c => { syncNotice = ""; if (enforceSub(c) && syncNotice) adjusted.push(syncNotice); });
+  if (adjusted.length) notify(adjusted.join("\n"));
   const cats = work.cats
     .map(c => ({
       ...c,
@@ -536,11 +692,11 @@ $("saveGoals").addEventListener("click", () => {
   });
   const totalB = budgetSum(cats);
   const startB = work.income || 0;
-  if (startB && totalB > startB && !confirm(`งบรวม ${fmt(totalB)} บาท เกินเงินต้นเดือน ${fmt(startB)} บาท\nต้องการบันทึกต่อไหม?`)) return;
+  if (startB && totalB > startB && !okConfirm(`งบรวม ${fmt(totalB)} บาท เกินเงินต้นเดือน ${fmt(startB)} บาท\nต้องการบันทึกต่อไหม?`)) return;
   saveCustom();
   goals[curMonth()] = { income: work.income || 0, cats };
   const relinked = reconcileMonth(curMonth());
-  if (relinked) alert(`จัดรายจ่ายที่บันทึกไว้เข้ากับงบใหม่แล้ว ${relinked} รายการ`);
+  if (relinked) notify(`จัดรายจ่ายที่บันทึกไว้เข้ากับงบใหม่แล้ว ${relinked} รายการ`);
   saveGoals();
   editing = false;
   work = null;
@@ -742,7 +898,7 @@ $("drafts").addEventListener("click", e => {
 
 $("saveDrafts").addEventListener("click", () => {
   const valid = drafts.filter(d => parseFloat(d.amount) > 0);
-  if (!valid.length) { alert("ไม่มีรายการที่มียอดเงิน กรุณากรอกยอดก่อน"); return; }
+  if (!valid.length) { notify("ไม่มีรายการที่มียอดเงิน กรุณากรอกยอดก่อน"); return; }
   valid.forEach(d => items.push({
     id: uid(), t: Date.now(), type: d.type, amount: parseFloat(d.amount),
     category: d.category, note: d.note.trim(), date: d.date,
@@ -831,7 +987,7 @@ function renderAll() {
       const subsHtml = c.subs.map(s => {
         const paid = monthAll.some(i => i.linkId === s.id);
         return `<div class="subline ${paid ? "done" : ""}">
-          <span class="check">${paid ? "☑" : "☐"}</span>
+          <span class="check">${paid ? IC.on : IC.off}</span>
           <span>${escapeHtml(s.name)}</span>
           <span class="amt">${fmt(s.amount)}</span>
         </div>`;
@@ -878,7 +1034,7 @@ function renderAll() {
           const sub = arr.reduce((s, i) => s + i.amount, 0);
           return `<div class="cat">
             <div class="cat-head"><span>${escapeHtml(name)}</span><span class="exp">${fmt(sub)}</span></div>
-            ${arr.map(i => `<div class="subline"><span class="check">☑</span><span>${i.date.slice(8)}/${i.date.slice(5, 7)} ${escapeHtml(i.note || name)}</span><span class="amt">${fmt(i.amount)}</span></div>`).join("")}
+            ${arr.map(i => `<div class="subline"><span class="check">${IC.on}</span><span>${i.date.slice(8)}/${i.date.slice(5, 7)} ${escapeHtml(i.note || name)}</span><span class="amt">${fmt(i.amount)}</span></div>`).join("")}
           </div>`;
         }).join("") + `<div class="cat"><div class="cat-head"><b>รวมจ่ายทั้งหมด</b><b class="exp">${fmt(totalPaid)}</b></div></div>`
       : `<p class="muted">ยังไม่มีรายจ่ายในเดือนนี้</p>`;
@@ -908,7 +1064,7 @@ function renderAll() {
 
 $("list").addEventListener("click", e => {
   const id = e.target.dataset.id;
-  if (!id || !confirm("ลบรายการนี้?")) return;
+  if (!id || !okConfirm("ลบรายการนี้?")) return;
   items = items.filter(i => i.id !== id);
   saveItems(); renderAll();
 });
@@ -918,7 +1074,7 @@ $("filterCat").addEventListener("change", renderAll);
 
 // ส่งออก CSV ตามรูปแบบหน้าเว็บ: สรุปเดือน, งบแต่ละหัวข้อ (พร้อมรายการย่อย), รายรับระหว่างเดือน, รายจ่ายที่จ่ายแล้วจัดตามหมวด
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
-$("exportBtn").addEventListener("click", () => {
+$("exportBtn").addEventListener("click", async () => {
   const month = $("exportMonth").value || curMonth();
   if (!/^\d{4}-\d{2}$/.test(month)) return;
   const goal = goals[month];
@@ -993,17 +1149,20 @@ $("exportBtn").addEventListener("click", () => {
   }
   out.push(row("รวมจ่ายทั้งหมด", "", "", n(exp)));
 
-  const blob = new Blob(["﻿" + out.join("\n")], { type: "text/csv;charset=utf-8" });
+  const [yy, mm] = month.split("-").map(Number);
+  const filename = `รายรับรายจ่าย-${THAI_MONTHS[mm - 1]}-${yy + 543}.csv`;
+  const csv = "\ufeff" + out.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  const [yy, mm] = month.split("-").map(Number);
-  a.download = `รายรับรายจ่าย-${THAI_MONTHS[mm - 1]}-${yy + 543}.csv`;
+  a.download = filename;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
 function initCloud() {
   if (!cloudConfigured() || typeof firebase === "undefined") {
-    setAuthMsg("ยังไม่ได้ตั้งค่า Firebase ตอนนี้ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น");
+    setAuthMsg("โหมดในเครื่อง: ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น");
     renderAvatar();
     return;
   }
@@ -1084,5 +1243,5 @@ window.addEventListener("load", initCloud);
 
 renderAll();
 </script>
-</body>
-</html>
+
+</body></html>
