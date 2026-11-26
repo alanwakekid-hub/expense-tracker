@@ -838,10 +838,12 @@ function amountCandidates(text) {
 // ปรับภาพให้เป็นขาวดำ เพิ่มความคมชัด และขยายรูปเล็กให้อ่านตัวเลขได้ดีขึ้น
 async function preprocess(file) {
   const bmp = await createImageBitmap(file);
-  const scale = bmp.width < 1400 ? 2 : 1;
+  // จำกัดขนาดภาพไม่เกิน 1600 px เพื่อไม่ให้ใช้หน่วยความจำมากเกินไปบนมือถือ
+  const maxSide = Math.max(bmp.width, bmp.height);
+  const scale = Math.min(maxSide < 1400 ? 2 : 1, 1600 / maxSide);
   const c = document.createElement("canvas");
-  c.width = bmp.width * scale;
-  c.height = bmp.height * scale;
+  c.width = Math.round(bmp.width * scale);
+  c.height = Math.round(bmp.height * scale);
   const ctx = c.getContext("2d");
   ctx.filter = "grayscale(1) contrast(1.5)";
   ctx.drawImage(bmp, 0, 0, c.width, c.height);
@@ -861,11 +863,15 @@ function extractDate(text) {
   return m ? m[0] : null;
 }
 
-$("slipFiles").addEventListener("change", async e => {
+// เข้าคิวทีละชุด: ถ้าอัปโหลดหลายชุดพร้อมกัน ให้รออ่านชุดก่อนหน้าเสร็จก่อน ไม่ให้ตัวอ่านทำงานซ้อนกัน
+let slipQueue = Promise.resolve();
+$("slipFiles").addEventListener("change", e => {
   const files = [...e.target.files];
   e.target.value = "";
   if (!files.length) return;
-
+  slipQueue = slipQueue.then(() => handleSlipFiles(files)).catch(() => {});
+});
+async function handleSlipFiles(files) {
   const newDrafts = files.map(f => ({
     id: uid(), file: f, url: URL.createObjectURL(f),
     type: "expense", amount: "", date: todayStr(), category: "อื่นๆ", note: "",
@@ -901,9 +907,13 @@ $("slipFiles").addEventListener("change", async e => {
         d.linkId = findSub(d.note, d.category, monthOf(d.date));
         d.status = amount !== null ? "อ่านแล้ว กรุณาตรวจสอบ" : "หายอดเงินไม่เจอ กรุณากรอกเอง";
         d.ok = amount !== null;
-      } catch {
-        d.status = "อ่านไม่สำเร็จ กรุณากรอกเอง";
+      } catch (err) {
+        d.status = "อ่านไม่สำเร็จ (" + ((err && err.message) || "ไม่ทราบสาเหตุ") + ") กรุณากรอกเอง";
         d.ok = false;
+        // รีเซ็ตตัวอ่าน เพื่อไม่ให้รูปถัดไปติดสถานะค้าง
+        try { await worker.terminate(); } catch (e2) {}
+        worker = null;
+        try { worker = await Tesseract.createWorker("tha+eng"); } catch (e3) { worker = null; }
       }
       done++;
       $("slipStatus").textContent = `อ่านแล้ว ${done}/${newDrafts.length} รูป`;
@@ -912,7 +922,7 @@ $("slipFiles").addEventListener("change", async e => {
   } catch {
     $("slipStatus").textContent = "โหลดตัวอ่านไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่";
   }
-});
+}
 
 function renderDrafts() {
   const wrap = $("drafts");
@@ -997,10 +1007,17 @@ $("note").addEventListener("input", () => {
 });
 $("date").addEventListener("change", () => { $("linkSub").innerHTML = subOptions(monthOf($("date").value), ""); });
 
+// รายชื่อหมวดในฟอร์มเพิ่มรายการ: รายจ่ายเฉพาะหัวข้อที่มีงบ
+function formCats() {
+  const g = goals[curMonth()];
+  if ($("type").value === "expense" && g && g.cats.length) return g.cats.map(c => c.name);
+  return allCats();
+}
+$("type").addEventListener("change", renderAll);
 $("form").addEventListener("submit", e => {
   e.preventDefault();
   const note = $("note").value.trim();
-  const cat = $("category").value;
+  const cat = formCats().includes($("category").value) ? $("category").value : (formCats()[0] || "อื่นๆ");
   const date = $("date").value;
   const type = $("type").value;
   const linkId = type === "expense" ? ($("linkSub").value || findSub(note, cat, monthOf(date))) : "";
@@ -1029,7 +1046,8 @@ function renderAll() {
 
   // รายชื่อหมวดและรายการย่อยในฟอร์ม
   const catSel = $("category").value;
-  $("category").innerHTML = optionsHtml(allCats(), catSel || "อื่นๆ");
+  // รายจ่ายให้เลือกเฉพาะหัวข้อที่ตั้งงบไว้เดือนนี้ ส่วนรายรับเลือกได้ทุกหมวด
+  $("category").innerHTML = optionsHtml(formCats(), catSel || formCats()[0] || "อื่นๆ");
   const filterSel = $("filterCat").value;
   $("filterCat").innerHTML = `<option value="">ทุกหมวดหมู่</option>` + optionsHtml(allCats(), filterSel);
   $("linkSub").innerHTML = subOptions(monthOf($("date").value), $("linkSub").value);
