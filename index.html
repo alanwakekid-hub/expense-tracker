@@ -161,6 +161,10 @@ header .menu-btn { width: 30px; height: 30px; }
 .cat.cat-over { background: rgba(239,68,68,.22); border-radius: 12px; padding: 10px; margin: 6px 0; }
 .cat.cat-over .cat-head, .cat.cat-over .cat-head span { color: #dc2626; font-weight: 700; }
 .cat.cat-over .bar > div { background: #dc2626 !important; }
+/* ข้อความเล็กสีแดงเมื่อรายการเช็คลิสต์จ่ายเกินงบ */
+.sub-warn { color: #dc2626; font-size: 12px; font-weight: 600; margin-left: 6px; white-space: nowrap; }
+.subline.done span.sub-warn { color: #dc2626; text-decoration: none; }
+#summaryCard.alert-over .sub-warn { color: #fff; }
 /* ป็อปอัพแก้ไขโปรไฟล์ */
 .modal-wrap { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .modal-card { width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; padding: 16px; border-radius: 20px; border: .5px solid var(--line); background: var(--card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow); }
@@ -570,6 +574,11 @@ function allSubs(month) {
   if (!g) return [];
   return g.cats.flatMap(c => c.subs.map(s => ({ ...s, cat: c.name })));
 }
+// หัวข้อหลักของรายการเช็คลิสต์ที่เลือก (ใช้เปลี่ยนหมวดของรายจ่ายอัตโนมัติ)
+function subCategory(linkId, month) {
+  const s = allSubs(month).find(x => x.id === linkId);
+  return s ? s.cat : "";
+}
 function findSub(note, catName, month) {
   const n = (note || "").toLowerCase().trim();
   if (!n) return "";
@@ -961,7 +970,8 @@ $("saveDrafts").addEventListener("click", () => {
   if (!valid.length) { notify("ไม่มีรายการที่มียอดเงิน กรุณากรอกยอดก่อน"); return; }
   valid.forEach(d => items.push({
     id: uid(), t: Date.now(), type: d.type, amount: parseFloat(d.amount),
-    category: d.category, note: d.note.trim(), date: d.date,
+    category: (d.type === "expense" && subCategory(d.linkId || findSub(d.note, d.category, monthOf(d.date)), monthOf(d.date))) || d.category,
+    note: d.note.trim(), date: d.date,
     linkId: d.type === "expense" ? (d.linkId || findSub(d.note, d.category, monthOf(d.date))) : ""
   }));
   saveItems();
@@ -990,7 +1000,7 @@ $("form").addEventListener("submit", e => {
   items.push({
     id: uid(), t: Date.now(), type,
     amount: parseFloat($("amount").value),
-    category: cat, note, date, linkId
+    category: (linkId && subCategory(linkId, monthOf(date))) || cat, note, date, linkId
   });
   saveItems();
   $("form").reset();
@@ -1051,6 +1061,7 @@ function renderAll() {
         return `<div class="subline ${paid ? "done" : ""}">
           <span class="check">${paid ? IC.on : IC.off}</span>
           <span>${escapeHtml(s.name)}</span>
+          ${(() => { const sp = monthAll.filter(i => i.linkId === s.id).reduce((t, i) => t + i.amount, 0); return s.amount > 0 && sp > s.amount ? `<span class="sub-warn">เกินงบ ${fmt(sp - s.amount)}</span>` : ""; })()}
           <span class="amt">${fmt(s.amount)}</span>
         </div>`;
       }).join("");
