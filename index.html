@@ -151,6 +151,13 @@ header .avatar { width: 30px; height: 30px; box-shadow: none; }
 header .menu-btn { width: 30px; height: 30px; }
 #userName { font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #menuPanel small { display: block; margin-bottom: 4px; }
+/* ป็อปอัพแก้ไขโปรไฟล์ */
+.modal-wrap { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.modal-card { width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; padding: 16px; border-radius: 20px; border: .5px solid var(--line); background: var(--card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.modal-head h2 { margin: 0; font-size: 17px; color: var(--text); }
+.modal-head button { margin: 0; padding: 6px 12px; font-size: 13px; }
+#photoPanel { margin-top: 0 !important; }
 /* แถบหัวกะทัดรัด: แถวเดียว */
 header { padding: 6px 12px; padding-top: max(6px, env(safe-area-inset-top, 0px)); }
 header > div { flex-wrap: nowrap !important; gap: 6px !important; min-width: 0; }
@@ -296,6 +303,12 @@ header button.secondary { background: var(--fill); color: var(--text); }
 
 </main>
 
+<div id="profileModal" class="hidden modal-wrap">
+  <div class="modal-card">
+    <div class="modal-head"><h2>แก้ไขโปรไฟล์</h2><button id="closeProfile" class="secondary">ปิด</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
 <div id="toast" class="hidden" style="position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--text);color:var(--bg);padding:12px 14px;border-radius:14px;z-index:50;font-size:14px;white-space:pre-line"></div>
 <script>
 const CATEGORIES = ["อาหาร","เดินทาง","ช้อปปิ้ง","บิล/ค่าใช้จ่ายบ้าน","สุขภาพ","บันเทิง","การศึกษา","เงินเดือน/รายได้","อื่นๆ"];
@@ -484,7 +497,7 @@ document.addEventListener("click", e => {
 });
 // ย้ายชื่อผู้ใช้และส่วนแก้ไขโปรไฟล์เข้าไปอยู่ในเมนูสามขีด
 $("menuPanel").prepend($("userName"));
-$("menuPanel").appendChild($("photoPanel"));
+$("modalBody").appendChild($("photoPanel"));
 
 function afterPhotoChange() {
   renderAvatar();
@@ -1258,11 +1271,20 @@ $("loginBtn").addEventListener("click", async () => {
   }
 });
 $("logoutBtn").addEventListener("click", () => CLOUD.auth.signOut());
+// เปิดหน้าต่างแก้ไขโปรไฟล์ (ป็อปอัพ) แล้วปิดเมนูสามขีด
 $("photoBtn").addEventListener("click", () => {
   const user = CLOUD.user;
   $("displayNameInput").value = profile.name || (user && user.displayName) || "";
-  $("photoPanel").classList.toggle("hidden");
+  $("menuPanel").classList.add("hidden");
+  $("photoPanel").classList.remove("hidden");
+  $("profileModal").classList.remove("hidden");
 });
+function closeProfile() {
+  $("profileModal").classList.add("hidden");
+  $("photoPanel").classList.add("hidden");
+}
+$("closeProfile").addEventListener("click", closeProfile);
+$("profileModal").addEventListener("click", e => { if (e.target.id === "profileModal") closeProfile(); });
 $("saveName").addEventListener("click", () => {
   const user = CLOUD.user;
   const v = $("displayNameInput").value.trim();
