@@ -534,7 +534,11 @@ function afterPhotoChange() {
   setAuthMsg("บันทึกรูปโปรไฟล์แล้ว");
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+// วันที่ของเครื่องตามเวลาท้องถิ่น (ไม่ใช้ UTC เพราะช่วงเที่ยงคืนถึง 7 โมงเช้าไทยจะได้วันก่อนหน้า)
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
 function monthOf(dateStr) { return (dateStr || "").slice(0, 7); }
 function curMonth() { return $("monthPick").value; }
 function fmt(n) { return Number(n || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -1148,6 +1152,19 @@ $("list").addEventListener("click", e => {
 });
 
 $("monthPick").addEventListener("change", () => { editing = false; work = null; $("exportMonth").value = curMonth(); renderAll(); });
+// ถ้าหน้าเปิดค้างข้ามเดือน ให้ขึ้นเดือนใหม่เอง (เฉพาะกรณีที่ยังดูเดือนปัจจุบันอยู่)
+let autoMonth = todayStr().slice(0, 7);
+setInterval(() => {
+  const nowMonth = todayStr().slice(0, 7);
+  if (nowMonth === autoMonth) return;
+  if ($("monthPick").value === autoMonth) {
+    $("monthPick").value = nowMonth;
+    $("exportMonth").value = nowMonth;
+    editing = false; work = null;
+    renderAll();
+  }
+  autoMonth = nowMonth;
+}, 60 * 1000);
 $("filterCat").addEventListener("change", renderAll);
 
 // ส่งออก CSV ตามรูปแบบหน้าเว็บ: สรุปเดือน, งบแต่ละหัวข้อ (พร้อมรายการย่อย), รายรับระหว่างเดือน, รายจ่ายที่จ่ายแล้วจัดตามหมวด
