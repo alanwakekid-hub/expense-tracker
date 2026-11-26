@@ -76,12 +76,16 @@
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <img id="avatar" class="avatar hidden" alt="รูปโปรไฟล์">
     <span id="avatarFallback" class="avatar hidden"></span>
+    <span id="userName" class="hidden" style="font-weight:600"></span>
     <button id="logoutBtn" class="secondary hidden">ออกจากระบบ</button>
     <button id="loginBtn" class="hidden">เข้าสู่ระบบด้วย Google</button>
     <small id="authMsg" class="muted">กำลังเริ่มต้น...</small>
-    <button id="photoBtn" class="link-btn hidden">แก้ไขรูป</button>
+    <button id="photoBtn" class="link-btn hidden">แก้ไขโปรไฟล์</button>
   </div>
   <div id="photoPanel" class="hidden" style="margin-top:10px;display:grid;gap:8px">
+    <label>ชื่อที่แสดง (ถ้าเว้นว่างจะใช้ชื่อจาก Google)<input type="text" id="displayNameInput" maxlength="40"></label>
+    <button id="saveName" class="secondary">บันทึกชื่อ</button>
+    <hr style="width:100%;border:none;border-top:1px solid #444;margin:4px 0">
     <label>ลิงก์รูป (ขึ้นต้นด้วย https://)<input type="url" id="photoUrl" placeholder="https://..."></label>
     <button id="savePhotoUrl" class="secondary">บันทึกลิงก์รูป</button>
     <label>หรืออัพโหลดรูปจากเครื่อง (ระบบจะย่อเป็นวงกลม)<input type="file" id="photoFile" accept="image/*"></label>
@@ -259,10 +263,14 @@ function renderAvatar() {
   if (!user) {
     img.classList.add("hidden");
     fb.classList.add("hidden");
+    $("userName").classList.add("hidden");
     $("photoPanel").classList.add("hidden");
     return;
   }
   fb.textContent = ((user.displayName || user.email || "?").trim()[0] || "?").toUpperCase();
+  const nameEl = $("userName");
+  nameEl.textContent = profile.name || user.displayName || user.email || "";
+  nameEl.classList.remove("hidden");
   const src = profile.photo || user.photoURL || "";
   if (src) {
     img.referrerPolicy = "no-referrer";
@@ -1016,7 +1024,20 @@ $("loginBtn").addEventListener("click", () => {
     .catch(e => setAuthMsg("เข้าสู่ระบบไม่สำเร็จ: " + e.message));
 });
 $("logoutBtn").addEventListener("click", () => CLOUD.auth.signOut());
-$("photoBtn").addEventListener("click", () => $("photoPanel").classList.toggle("hidden"));
+$("photoBtn").addEventListener("click", () => {
+  const user = CLOUD.user;
+  $("displayNameInput").value = profile.name || (user && user.displayName) || "";
+  $("photoPanel").classList.toggle("hidden");
+});
+$("saveName").addEventListener("click", () => {
+  const user = CLOUD.user;
+  const v = $("displayNameInput").value.trim();
+  // ถ้าชื่อที่กรอกตรงกับชื่อจาก Google ก็ไม่ต้องเก็บแยก
+  profile.name = (user && v === user.displayName) ? "" : v;
+  renderAvatar();
+  pushCloud();
+  setAuthMsg("บันทึกชื่อแล้ว");
+});
 $("savePhotoUrl").addEventListener("click", () => {
   const v = $("photoUrl").value.trim();
   let ok = false;
