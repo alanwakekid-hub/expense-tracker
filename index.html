@@ -1,6 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>บันทึกรายรับรายจ่าย</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root { --bg:#f5f6fa; --card:#fff; --text:#1f2430; --muted:#6b7280; --green:#16a34a; --red:#dc2626; --blue:#2563eb; --line:#eef0f4; }
   * { box-sizing: border-box; }
@@ -148,6 +151,16 @@ header .avatar { width: 30px; height: 30px; box-shadow: none; }
 header .menu-btn { width: 30px; height: 30px; }
 #userName { font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #menuPanel small { display: block; margin-bottom: 4px; }
+/* แถบหัวกะทัดรัด: แถวเดียว */
+header { padding: 6px 12px; padding-top: max(6px, env(safe-area-inset-top, 0px)); }
+header > div { flex-wrap: nowrap !important; gap: 6px !important; min-width: 0; }
+header h1 { font-size: 15px; white-space: nowrap; }
+header h1 svg { width: 16px; height: 16px; margin-right: 6px !important; }
+header button { margin: 0; padding: 5px 10px; font-size: 12px; border-radius: 9px; white-space: nowrap; }
+header .avatar { width: 26px; height: 26px; }
+header .menu-btn { width: 28px; height: 28px; flex-shrink: 0; }
+#userName { font-size: 12px; max-width: 90px; }
+@media (max-width: 420px) { #userName { display: none; } }
 /* เมนูสามขีดเป็นหน้าต่างลอยแยกใต้ไอคอน */
 #menuPanel { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 56px); right: 12px; width: 230px; max-width: calc(100vw - 24px); z-index: 30; margin: 0; padding: 10px; border: .5px solid var(--line); border-radius: 16px; background: var(--card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow); }
 :root[data-theme="dark"] { color-scheme: dark; }
@@ -172,7 +185,7 @@ header .menu-btn { width: 30px; height: 30px; }
     <span id="avatarFallback" class="avatar hidden"></span>
     <span id="userName" class="hidden" style="font-weight:600"></span>
     <button id="logoutBtn" class="secondary hidden">ออกจากระบบ</button>
-    <button id="loginBtn" class="hidden">เข้าสู่ระบบด้วย Google</button>
+    <button id="loginBtn">เข้าสู่ระบบ</button>
     <button id="menuBtn" class="menu-btn" aria-label="เมนู"><span></span><span></span><span></span></button>
   </div>
 </header>
@@ -1160,17 +1173,16 @@ $("exportBtn").addEventListener("click", async () => {
   const [yy, mm] = month.split("-").map(Number);
   const filename = `รายรับรายจ่าย-${THAI_MONTHS[mm - 1]}-${yy + 543}.csv`;
   const csv = "\ufeff" + out.join("\n");
-  const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-  if (!downloads) { notify("ดาวน์โหลดไฟล์ไม่ได้ในหน้านี้ ลองเปิดลิงก์ในเบราว์เซอร์"); return; }
-  try {
-    await downloads.save({ filename, data: csv });
-  } catch (err) {
-    if (err && err.code !== "declined") notify("บันทึกไฟล์ไม่สำเร็จ");
-    else notify("ยกเลิกการบันทึก");
-  }
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
 function initCloud() {
+  if (CLOUD.auth) return;
   if (!cloudConfigured() || typeof firebase === "undefined") {
     setAuthMsg("โหมดในเครื่อง: ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น");
     renderAvatar();
@@ -1210,9 +1222,36 @@ function initCloud() {
     renderAll();
   });
 }
-$("loginBtn").addEventListener("click", () => {
-  CLOUD.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(e => setAuthMsg("เข้าสู่ระบบไม่สำเร็จ: " + e.message));
+// ถ้า Firebase โหลดตอนเปิดหน้าไม่สำเร็จ ลองโหลดใหม่ตอนกดเข้าสู่ระบบ และแจ้งสาเหตุที่ชัดเจน
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("โหลดไม่ได้: " + src));
+    document.head.appendChild(s);
+  });
+}
+async function ensureFirebase() {
+  if (typeof firebase !== "undefined") return;
+  const base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  await loadScript(base + "firebase-app-compat.js");
+  await loadScript(base + "firebase-auth-compat.js");
+  await loadScript(base + "firebase-firestore-compat.js");
+}
+$("loginBtn").addEventListener("click", async () => {
+  try {
+    if (!CLOUD.auth) {
+      notify("กำลังเตรียมระบบล็อกอิน...");
+      await ensureFirebase();
+      initCloud();
+      if (!CLOUD.auth) throw new Error("ตั้งค่า Firebase ไม่สำเร็จ");
+    }
+    await CLOUD.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } catch (e) {
+    setAuthMsg("เข้าสู่ระบบไม่สำเร็จ: " + e.message);
+    notify("เข้าสู่ระบบไม่สำเร็จ\n" + e.message);
+  }
 });
 $("logoutBtn").addEventListener("click", () => CLOUD.auth.signOut());
 $("photoBtn").addEventListener("click", () => {
