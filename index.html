@@ -151,6 +151,16 @@ header .avatar { width: 30px; height: 30px; box-shadow: none; }
 header .menu-btn { width: 30px; height: 30px; }
 #userName { font-size: 13px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #menuPanel small { display: block; margin-bottom: 4px; }
+/* โหมดแจ้งเตือนสีแดงเมื่อใช้เกินงบ */
+#summaryCard.alert-over { background: linear-gradient(135deg, #ef4444, #dc2626); border: .5px solid #f87171; color: #fff; }
+#summaryCard.alert-over h2, #summaryCard.alert-over .muted, #summaryCard.alert-over small { color: #fecaca; }
+#summaryCard.alert-over .stats > div { background: rgba(255,255,255,.16); }
+#summaryCard.alert-over .left, #summaryCard.alert-over .stats b, #summaryCard.alert-over .exp, #summaryCard.alert-over .cat-head { color: #fff; }
+#summaryCard.alert-over .subline, #summaryCard.alert-over .cat, #summaryCard.alert-over .item { border-color: rgba(255,255,255,.3); }
+#summaryCard.alert-over .bar { background: rgba(255,255,255,.25); }
+.cat.cat-over { background: rgba(239,68,68,.22); border-radius: 12px; padding: 10px; margin: 6px 0; }
+.cat.cat-over .cat-head, .cat.cat-over .cat-head span { color: #dc2626; font-weight: 700; }
+.cat.cat-over .bar > div { background: #dc2626 !important; }
 /* ป็อปอัพแก้ไขโปรไฟล์ */
 .modal-wrap { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.35); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .modal-card { width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; padding: 16px; border-radius: 20px; border: .5px solid var(--line); background: var(--card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--shadow); }
@@ -204,6 +214,7 @@ header button.secondary { background: var(--fill); color: var(--text); }
     <small id="authMsg" class="muted">กำลังเริ่มต้น...</small>
     <button id="photoBtn" class="secondary hidden">แก้ไขโปรไฟล์</button>
     <button id="themeBtn" class="secondary">โหมด: อัตโนมัติ</button>
+    <button id="alertBtn" class="secondary">แจ้งเตือนเกินงบ: เปิด</button>
   </div>
   <div id="photoPanel" class="hidden" style="margin-top:10px;display:grid;gap:8px">
     <label>ชื่อที่แสดง (ถ้าเว้นว่างจะใช้ชื่อจาก Google)<input type="text" id="displayNameInput" maxlength="40"></label>
@@ -494,6 +505,17 @@ $("menuBtn").addEventListener("click", e => {
 });
 document.addEventListener("click", e => {
   if (!$("menuPanel").contains(e.target) && e.target !== $("menuBtn")) $("menuPanel").classList.add("hidden");
+});
+// ปุ่มเปิด/ปิดโหมดแจ้งเตือนสีแดงเมื่อใช้เกินงบ (จำค่าไว้ในเครื่อง)
+let alertOn = true;
+try { alertOn = localStorage.getItem(KEY + "-alert") !== "off"; } catch (e) {}
+function renderAlertBtn() { $("alertBtn").textContent = "แจ้งเตือนเกินงบ: " + (alertOn ? "เปิด" : "ปิด"); }
+renderAlertBtn();
+$("alertBtn").addEventListener("click", () => {
+  alertOn = !alertOn;
+  try { localStorage.setItem(KEY + "-alert", alertOn ? "on" : "off"); } catch (e) {}
+  renderAlertBtn();
+  renderAll();
 });
 // ย้ายชื่อผู้ใช้และส่วนแก้ไขโปรไฟล์เข้าไปอยู่ในเมนูสามขีด
 $("menuPanel").prepend($("userName"));
@@ -1013,6 +1035,8 @@ function renderAll() {
       ? `ใช้ไปแล้ว ${Math.round(exp / totalAvailable * 100)}% ของเงินที่มี`
       : "ยังไม่ได้ตั้งเงินต้นเดือน";
     $("leftText").innerHTML = `<span class="${left < 0 ? "exp" : "inc"}">${fmt(left)} บาท</span>`;
+    const anyOver = left < 0 || goal.cats.some(c => c.limit && monthAll.filter(i => i.type === "expense" && i.category === c.name).reduce((s, i) => s + i.amount, 0) > c.limit);
+    $("summaryCard").classList.toggle("alert-over", alertOn && anyOver);
 
     $("catSummary").innerHTML = goal.cats.map(c => {
       const spent = monthAll.filter(i => i.type === "expense" && i.category === c.name).reduce((s, i) => s + i.amount, 0);
@@ -1030,7 +1054,7 @@ function renderAll() {
           <span class="amt">${fmt(s.amount)}</span>
         </div>`;
       }).join("");
-      return `<div class="cat">
+      return `<div class="cat ${alertOn && over ? "cat-over" : ""}">
         <div class="cat-head"><span>${escapeHtml(c.name)}</span><span>${c.limit ? fmt(spent) + " / " + fmt(c.limit) : fmt(spent)}</span></div>
         <div style="margin-top:2px">${status}</div>
         ${c.limit ? `<div class="bar"><div class="${over ? "over" : ""}" style="width:${pct}%"></div></div>` : ""}
