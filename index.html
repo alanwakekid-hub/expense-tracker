@@ -61,6 +61,7 @@
   .item small { color:var(--muted); }
   .tag { display:inline-block; font-size:11px; background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:99px; margin-left:4px; }
   .hidden { display:none !important; }
+.avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; display:inline-flex; align-items:center; justify-content:center; background:#4b5563; color:#fff; font-weight:600; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -72,9 +73,18 @@
 
 <div class="card">
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <img id="avatar" class="avatar hidden" alt="รูปโปรไฟล์">
+    <span id="avatarFallback" class="avatar hidden"></span>
     <button id="loginBtn" class="hidden">เข้าสู่ระบบด้วย Google</button>
     <button id="logoutBtn" class="secondary hidden">ออกจากระบบ</button>
+    <button id="photoBtn" class="secondary hidden">เปลี่ยนรูปโปรไฟล์</button>
     <small id="authMsg" class="muted">กำลังเริ่มต้น...</small>
+  </div>
+  <div id="photoPanel" class="hidden" style="margin-top:10px;display:grid;gap:8px">
+    <label>ลิงก์รูป (ขึ้นต้นด้วย https://)<input type="url" id="photoUrl" placeholder="https://..."></label>
+    <button id="savePhotoUrl" class="secondary">บันทึกลิงก์รูป</button>
+    <label>หรืออัพโหลดรูปจากเครื่อง (ระบบจะย่อเป็นวงกลม)<input type="file" id="photoFile" accept="image/*"></label>
+    <button id="useGoogle" class="secondary">ใช้รูปจาก Google</button>
   </div>
 </div>
 
@@ -212,14 +222,16 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "929205427802"
 };
 const CLOUD = { user: null, db: null, auth: null, timer: null };
+let profile = {}; // { photo: ลิงก์ https หรือรูปที่อัพโหลด (data URL) }
 const cloudConfigured = () => FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith("ใส่");
 
 function setAuthMsg(t) { const el = $("authMsg"); if (el) el.textContent = t; }
-function cloudPayload() { return { items, goals, customCats, updatedAt: Date.now() }; }
+function cloudPayload() { return { items, goals, customCats, profile, updatedAt: Date.now() }; }
 function applyCloud(d) {
   items = d.items || [];
   goals = d.goals || {};
   customCats = d.customCats || [];
+  profile = d.profile || {};
   localStorage.setItem(KEY, JSON.stringify(items));
   localStorage.setItem(KEY + "-goals", JSON.stringify(goals));
   localStorage.setItem(KEY + "-cats", JSON.stringify(customCats));
@@ -237,6 +249,57 @@ function pushCloud() {
 function saveItems() { localStorage.setItem(KEY, JSON.stringify(items)); pushCloud(); }
 function saveGoals() { localStorage.setItem(KEY + "-goals", JSON.stringify(goals)); pushCloud(); }
 function saveCustom() { localStorage.setItem(KEY + "-cats", JSON.stringify(customCats)); pushCloud(); }
+
+// ---------- รูปโปรไฟล์ ----------
+// ลำดับ: รูปที่ตั้งเอง > รูปจาก Google > ตัวอักษรแรกของชื่อ
+function renderAvatar() {
+  const img = $("avatar"), fb = $("avatarFallback"), user = CLOUD.user;
+  $("photoBtn").classList.toggle("hidden", !user);
+  if (!user) {
+    img.classList.add("hidden");
+    fb.classList.add("hidden");
+    $("photoPanel").classList.add("hidden");
+    return;
+  }
+  fb.textContent = ((user.displayName || user.email || "?").trim()[0] || "?").toUpperCase();
+  const src = profile.photo || user.photoURL || "";
+  if (src) {
+    img.referrerPolicy = "no-referrer";
+    img.src = src;
+    img.classList.remove("hidden");
+    fb.classList.add("hidden");
+  } else {
+    img.classList.add("hidden");
+    fb.classList.remove("hidden");
+  }
+}
+$("avatar").addEventListener("error", () => {
+  $("avatar").classList.add("hidden");
+  $("avatarFallback").classList.remove("hidden");
+});
+
+// ย่อรูปให้เป็นสี่เหลี่ยมจัตุรัส 128 px แล้วตัดเป็นวงกลมตอนแสดงผล
+function resizeImage(file, size = 128) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height);
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("อ่านรูปไม่ได้")); };
+    img.src = url;
+  });
+}
+function afterPhotoChange() {
+  renderAvatar();
+  pushCloud();
+  setAuthMsg("บันทึกรูปโปรไฟล์แล้ว");
+}
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function monthOf(dateStr) { return (dateStr || "").slice(0, 7); }
@@ -913,6 +976,7 @@ $("exportBtn").addEventListener("click", () => {
 function initCloud() {
   if (!cloudConfigured() || typeof firebase === "undefined") {
     setAuthMsg("ยังไม่ได้ตั้งค่า Firebase ตอนนี้ข้อมูลเก็บในเบราว์เซอร์นี้เท่านั้น");
+    renderAvatar();
     return;
   }
   firebase.initializeApp(FIREBASE_CONFIG);
@@ -923,7 +987,10 @@ function initCloud() {
     CLOUD.user = user;
     $("loginBtn").classList.toggle("hidden", !!user);
     $("logoutBtn").classList.toggle("hidden", !user);
+    renderAvatar();
     if (!user) {
+      profile = {};
+      renderAvatar();
       setAuthMsg("ยังไม่ได้เข้าสู่ระบบ ข้อมูลเก็บในเบราว์เซอร์นี้");
       renderAll();
       return;
@@ -939,6 +1006,7 @@ function initCloud() {
     } catch (e) {
       setAuthMsg("โหลดข้อมูลจากคลาวด์ไม่สำเร็จ: " + e.message);
     }
+    renderAvatar();
     renderAll();
   });
 }
@@ -947,6 +1015,27 @@ $("loginBtn").addEventListener("click", () => {
     .catch(e => setAuthMsg("เข้าสู่ระบบไม่สำเร็จ: " + e.message));
 });
 $("logoutBtn").addEventListener("click", () => CLOUD.auth.signOut());
+$("photoBtn").addEventListener("click", () => $("photoPanel").classList.toggle("hidden"));
+$("savePhotoUrl").addEventListener("click", () => {
+  const v = $("photoUrl").value.trim();
+  let ok = false;
+  try { ok = new URL(v).protocol === "https:"; } catch (e) { ok = false; }
+  if (!ok) { setAuthMsg("ลิงก์รูปต้องขึ้นต้นด้วย https://"); return; }
+  profile.photo = v;
+  afterPhotoChange();
+});
+$("photoFile").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    profile.photo = await resizeImage(f);
+    afterPhotoChange();
+  } catch (err) {
+    setAuthMsg("อ่านรูปไม่สำเร็จ ลองไฟล์อื่น");
+  }
+});
+$("useGoogle").addEventListener("click", () => { profile.photo = ""; afterPhotoChange(); });
 window.addEventListener("load", initCloud);
 
 renderAll();
